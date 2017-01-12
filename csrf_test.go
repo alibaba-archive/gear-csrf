@@ -2,11 +2,9 @@ package csrf
 
 import (
 	"net/http"
-	"testing"
-
 	"net/url"
-
 	"strings"
+	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/teambition/gear"

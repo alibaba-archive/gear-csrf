@@ -44,7 +44,7 @@ type Options struct {
 	TokenHeader string
 	// CookieOptions is the options of the secret cookie.It's type
 	// is *http.Cookie so you can set every field of http.Cookie type
-	// but Name and Value. They are reserved for store the secret
+	// but Name and Value. They are reserved for storing the secret
 	// key/value.
 	CookieOptions *http.Cookie
 }
