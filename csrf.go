@@ -9,7 +9,7 @@ import (
 
 const cookieName = "_csrf"
 
-var cookieOption = &http.Cookie{Name: cookieName}
+var cookieOptions = &http.Cookie{Name: cookieName}
 
 // Token represents a CSRF token.
 type Token string
@@ -69,8 +69,8 @@ func New(opts Options) gear.Middleware {
 	}
 
 	if opts.CookieOptions != nil {
-		cookieOption = opts.CookieOptions
-		cookieOption.Name = cookieName
+		cookieOptions = opts.CookieOptions
+		cookieOptions.Name = cookieName
 	}
 
 	return func(ctx *gear.Context) (err error) {
@@ -104,8 +104,7 @@ func getSecret(ctx *gear.Context) string {
 		secret, _ := token.CreateSecret(18)
 
 		secretCookie = new(http.Cookie)
-		*secretCookie = *cookieOption
-		secretCookie.Name = cookieName
+		*secretCookie = *cookieOptions
 		secretCookie.Value = secret
 
 		ctx.SetCookie(secretCookie)

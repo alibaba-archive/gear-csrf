@@ -25,9 +25,10 @@ func Example() {
 	}))
 
 	app.Use(func(ctx *gear.Context) (err error) {
+		// Generate a CRSF token.
 		token, err := ctx.Any(new(csrf.Token))
 
-		// Add your CSRF token in your template forms.
+		// Add the CSRF token in your template forms.
 		ctx.Render(http.StatusOK, "./path/to/your/teamplate", token.(string))
 
 		return
