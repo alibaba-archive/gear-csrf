@@ -1,0 +1,10 @@
+sudo: false
+language: go
+go:
+  - 1.7
+before_install:
+  - go get -t -v ./...
+  - go get github.com/mattn/goveralls
+script:
+  - go test -coverprofile=gear-csrf.coverprofile
+  - goveralls -coverprofile=gear-csrf.coverprofile -service=travis-ci
