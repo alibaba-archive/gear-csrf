@@ -91,6 +91,7 @@ func TestMiddleware(t *testing.T) {
 			}
 			return true
 		},
+		CookieOptions: &http.Cookie{HttpOnly: true},
 	}))
 
 	app.Use(func(ctx *gear.Context) error {

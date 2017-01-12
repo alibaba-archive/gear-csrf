@@ -2,13 +2,14 @@ package csrf
 
 import (
 	"net/http"
-	"time"
 
 	"github.com/teambition/gear"
 	"github.com/teambition/gear-csrf/token"
 )
 
 const cookieName = "_csrf"
+
+var cookieOption = &http.Cookie{Name: cookieName}
 
 // Token represents a CSRF token.
 type Token string
@@ -17,7 +18,7 @@ type Token string
 // It will set a token secret in your cookie if not exist and
 // then returns a new CSRF token.
 func (t Token) New(ctx *gear.Context) (interface{}, error) {
-	return token.Generate(getSecretCookie(ctx, cookieName).Value, 18)
+	return token.Generate(getSecret(ctx), 18)
 }
 
 // Options is the CSRF middleware options.
@@ -41,6 +42,11 @@ type Options struct {
 	// TokenHeader is the name of the request header to  extract
 	// the CSRF token.By default it is "X-CSRF-Token" .
 	TokenHeader string
+	// CookieOptions is the options of the secret cookie.It's type
+	// is *http.Cookie so you can set every field of http.Cookie type
+	// but Name and Value. They are reserved for store the secret
+	// key/value.
+	CookieOptions *http.Cookie
 }
 
 // New returns a new CSRF middleware to prevent your Gear app from
@@ -62,6 +68,11 @@ func New(opts Options) gear.Middleware {
 		opts.TokenHeader = gear.HeaderXCSRFToken
 	}
 
+	if opts.CookieOptions != nil {
+		cookieOption = opts.CookieOptions
+		cookieOption.Name = cookieName
+	}
+
 	return func(ctx *gear.Context) (err error) {
 		if opts.RequestFilter != nil && !opts.RequestFilter(ctx) {
 			return
@@ -72,10 +83,9 @@ func New(opts Options) gear.Middleware {
 			ctx.Res.Vary(gear.HeaderCookie)
 		}()
 
-		secretCookie := getSecretCookie(ctx, cookieName)
 		csrfToken := getToken(ctx, opts)
 
-		if csrfToken == "" || !token.Verify(secretCookie.Value, csrfToken) {
+		if csrfToken == "" || !token.Verify(getSecret(ctx), csrfToken) {
 			return ctx.Error(&gear.Error{
 				Code: opts.InvalidTokenStatusCode,
 				Msg:  opts.InvalidTokenMessage,
@@ -86,22 +96,22 @@ func New(opts Options) gear.Middleware {
 	}
 }
 
-func getSecretCookie(ctx *gear.Context, name string) *http.Cookie {
-	secretCookie, err := ctx.Cookie(name)
+func getSecret(ctx *gear.Context) string {
+	secretCookie, err := ctx.Cookie(cookieName)
 
 	// ctx.Cookie can only return http.ErrNoCookie error.
 	if err != nil {
-		s, _ := token.CreateSecret(18)
-		secretCookie = &http.Cookie{
-			Name:     name,
-			Value:    s,
-			HttpOnly: true,
-			Expires:  time.Now().Add(24 * time.Hour),
-		}
+		secret, _ := token.CreateSecret(18)
+
+		secretCookie = new(http.Cookie)
+		*secretCookie = *cookieOption
+		secretCookie.Name = cookieName
+		secretCookie.Value = secret
+
 		ctx.SetCookie(secretCookie)
 	}
 
-	return secretCookie
+	return secretCookie.Value
 }
 
 func getToken(ctx *gear.Context, opts Options) string {
