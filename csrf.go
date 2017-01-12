@@ -18,7 +18,7 @@ type Token string
 // It will set a token secret in your cookie if not exist and
 // then returns a new CSRF token.
 func (t Token) New(ctx *gear.Context) (interface{}, error) {
-	return token.Generate(getSecret(ctx), 18)
+	return token.Generate(getSecret(ctx)), nil
 }
 
 // Options is the CSRF middleware options.
@@ -79,9 +79,7 @@ func New(opts Options) gear.Middleware {
 		}
 
 		// Prevent middle proxies from caching the response.
-		defer func() {
-			ctx.Res.Vary(gear.HeaderCookie)
-		}()
+		defer ctx.Res.Vary(gear.HeaderCookie)
 
 		csrfToken := getToken(ctx, opts)
 
@@ -101,11 +99,9 @@ func getSecret(ctx *gear.Context) string {
 
 	// ctx.Cookie can only return http.ErrNoCookie error.
 	if err != nil {
-		secret, _ := token.CreateSecret(18)
-
 		secretCookie = new(http.Cookie)
 		*secretCookie = *cookieOptions
-		secretCookie.Value = secret
+		secretCookie.Value = token.CreateSecret()
 
 		ctx.SetCookie(secretCookie)
 	}
