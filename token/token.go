@@ -1,31 +1,24 @@
 package token
 
 import (
-	cr "crypto/rand"
+	"crypto/rand"
 	"crypto/sha1"
 	"crypto/subtle"
 	"encoding/base64"
 	"strings"
 )
 
-// CreateSecret creates a new secret key.
-func CreateSecret() string {
-	return randomString()
-}
-
-// Generate returns a new token.
-func Generate(secret string) string {
+// New returns a new token by given secret key.
+func New(secret string) string {
 	return generateWithSalt(secret, randomString())
 }
 
-func generateWithSalt(secret, salt string) string {
-	h := sha1.New()
-	h.Write([]byte(salt + "." + secret))
-
-	return salt + "." + base64.RawURLEncoding.EncodeToString(h.Sum(nil))
+// NewSecret creates a new secret key.
+func NewSecret() string {
+	return randomString()
 }
 
-// Verify checks if given token is valid for the given secret.
+// Verify checks if the given token is valid for the given secret.
 func Verify(secret, token string) bool {
 	i := strings.Index(token, ".")
 
@@ -36,8 +29,15 @@ func Verify(secret, token string) bool {
 	return subtle.ConstantTimeCompare([]byte(token), []byte(generateWithSalt(secret, token[0:i]))) == 1
 }
 
+func generateWithSalt(secret, salt string) string {
+	h := sha1.New()
+	h.Write([]byte(salt + "." + secret))
+
+	return salt + "." + base64.RawURLEncoding.EncodeToString(h.Sum(nil))
+}
+
 func randomString() string {
 	b := make([]byte, 18)
-	cr.Read(b)
+	rand.Read(b)
 	return base64.RawURLEncoding.EncodeToString(b)
 }

@@ -11,23 +11,19 @@ const cookieName = "_csrf"
 
 var cookieOptions = &http.Cookie{Name: cookieName}
 
-// Token represents a CSRF token.
-type Token string
-
-// New is to implements gear.Any interface.
-// It will set a token secret in your cookie if not exist and
-// then returns a new CSRF token.
-func (t Token) New(ctx *gear.Context) (interface{}, error) {
-	return token.Generate(getSecret(ctx)), nil
+// GetTokenFromCtx returns a CSRF token. It will set a user secret in request
+// cookie if it not exists.
+func GetTokenFromCtx(ctx *gear.Context) string {
+	return token.New(getSecret(ctx))
 }
 
 // Options is the CSRF middleware options.
 type Options struct {
-	// RequestFilter checks whether this request should be
+	// Skipper checks whether this request should be
 	// checked its CSRF token by this middleware. If you
 	// want the request to skip this middleware, just make
-	// the function return false.
-	RequestFilter func(*gear.Context) bool
+	// the function return true.
+	Skipper func(*gear.Context) bool
 	// InvalidTokenStatusCode is the returned HTTP status code
 	// when the request CSRF token is invalid. By default it is
 	// 403 .
@@ -74,7 +70,7 @@ func New(opts Options) gear.Middleware {
 	}
 
 	return func(ctx *gear.Context) (err error) {
-		if opts.RequestFilter != nil && !opts.RequestFilter(ctx) {
+		if opts.Skipper != nil && opts.Skipper(ctx) {
 			return
 		}
 
@@ -101,7 +97,7 @@ func getSecret(ctx *gear.Context) string {
 	if err != nil {
 		secretCookie = new(http.Cookie)
 		*secretCookie = *cookieOptions
-		secretCookie.Value = token.CreateSecret()
+		secretCookie.Value = token.NewSecret()
 
 		ctx.SetCookie(secretCookie)
 	}
