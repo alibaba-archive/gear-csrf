@@ -18,10 +18,7 @@ func TestToken(t *testing.T) {
 	app := gear.New()
 
 	app.Use(func(ctx *gear.Context) error {
-		token, err := ctx.Any(new(Token))
-
-		assert.Nil(err)
-		assert.NotEqual(0, len(token.(string)))
+		assert.NotEqual(0, GetTokenFromCtx(ctx))
 
 		return ctx.HTML(200, "OK")
 	})
@@ -73,21 +70,17 @@ func TestMiddleware(t *testing.T) {
 	app := gear.New()
 
 	app.Use(func(ctx *gear.Context) error {
-		t, err := ctx.Any(new(Token))
-
-		assert.Nil(err)
-
-		token = t.(string)
+		token = GetTokenFromCtx(ctx)
 
 		return nil
 	})
 
 	app.Use(New(Options{
-		RequestFilter: func(ctx *gear.Context) bool {
+		Skipper: func(ctx *gear.Context) bool {
 			if ctx.Get("Test-Not-Pass") != "" {
-				return false
+				return true
 			}
-			return true
+			return false
 		},
 		CookieOptions: &http.Cookie{HttpOnly: true},
 	}))
