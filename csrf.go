@@ -91,7 +91,7 @@ func New(opts Options) gear.Middleware {
 }
 
 func getSecret(ctx *gear.Context) string {
-	secretCookie, err := ctx.Cookie(cookieName)
+	secretCookie, err := ctx.Req.Cookie(cookieName)
 
 	// ctx.Cookie can only return http.ErrNoCookie error.
 	if err != nil {
@@ -99,7 +99,7 @@ func getSecret(ctx *gear.Context) string {
 		*secretCookie = *cookieOptions
 		secretCookie.Value = token.NewSecret()
 
-		ctx.SetCookie(secretCookie)
+		http.SetCookie(ctx.Res, secretCookie)
 	}
 
 	return secretCookie.Value
