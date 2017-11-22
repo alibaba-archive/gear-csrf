@@ -69,24 +69,22 @@ func New(opts Options) gear.Middleware {
 		cookieOptions.Name = cookieName
 	}
 
-	return func(ctx *gear.Context) (err error) {
+	return func(ctx *gear.Context) error {
 		if opts.Skipper != nil && opts.Skipper(ctx) {
-			return
+			return nil
 		}
 
 		// Prevent middle proxies from caching the response.
-		defer ctx.Res.Vary(gear.HeaderCookie)
-
+		ctx.Res.Vary(gear.HeaderCookie)
 		csrfToken := getToken(ctx, opts)
-
 		if csrfToken == "" || !token.Verify(getSecret(ctx), csrfToken) {
-			return ctx.Error(&gear.Error{
+			return &gear.Error{
 				Code: opts.InvalidTokenStatusCode,
 				Msg:  opts.InvalidTokenMessage,
-			})
+			}
 		}
 
-		return
+		return nil
 	}
 }
 
@@ -110,5 +108,5 @@ func getToken(ctx *gear.Context, opts Options) string {
 		return token
 	}
 
-	return ctx.Get(opts.TokenHeader)
+	return ctx.GetHeader(opts.TokenHeader)
 }
